@@ -1,0 +1,18 @@
+You previously attempted to formalize this problem, but the Lean 4 compiler reported errors.
+
+{few_shot_examples}
+
+Original Problem: {natural_language}
+
+Previous Attempt:
+{previous_attempt}
+
+Compiler Errors:
+{compiler_errors}
+
+Please fix the errors and generate a corrected Lean 4 statement. Focus on:
+1. Syntax errors (missing tokens, incorrect structure)
+2. Type mismatches
+3. Unknown identifiers (use correct Mathlib imports)
+
+Output ONLY the corrected Lean 4 code:

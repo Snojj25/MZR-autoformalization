@@ -1,0 +1,32 @@
+[
+  {
+    "id": "test_001",
+    "natural_language": "Prove that for all real numbers x, x + 0 = x",
+    "category": "algebra",
+    "expected_difficulty": "trivial"
+  },
+  {
+    "id": "test_002",
+    "natural_language": "Show that 1 + 1 equals 2",
+    "category": "arithmetic",
+    "expected_difficulty": "trivial"
+  },
+  {
+    "id": "test_003",
+    "natural_language": "For any real number a, prove that a * 1 = a",
+    "category": "algebra",
+    "expected_difficulty": "trivial"
+  },
+  {
+    "id": "test_004",
+    "natural_language": "Prove that for positive real x, x + 1/x >= 2",
+    "category": "inequality",
+    "expected_difficulty": "easy"
+  },
+  {
+    "id": "test_005",
+    "natural_language": "Show that for any real a, a^2 >= 0",
+    "category": "algebra",
+    "expected_difficulty": "easy"
+  }
+]

@@ -1,0 +1,5 @@
+/.lake
+LeanExamples/
+
+!LeanExamples/basic.lean
+!LeanExamples/Example.lean

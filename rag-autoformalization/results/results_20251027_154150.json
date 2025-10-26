@@ -1,0 +1,15 @@
+[
+  {
+    "total_problems": 5,
+    "compilation_success_rate": 1.0,
+    "proof_success_rate": 0.0,
+    "first_attempt_success_rate": 0.0,
+    "avg_iterations_to_success": 2.0,
+    "avg_time_per_problem": 22.282153415679932,
+    "metrics_by_iteration": {
+      "iteration_1": 0,
+      "iteration_2": 5,
+      "iteration_3": 0
+    }
+  }
+]

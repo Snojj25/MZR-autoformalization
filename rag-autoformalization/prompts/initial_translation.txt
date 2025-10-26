@@ -1,0 +1,18 @@
+You are translating mathematical problems into Lean 4 formal statements.
+
+{few_shot_examples}
+
+Now translate this problem:
+Natural Language: {natural_language}
+
+Requirements:
+1. Output ONLY the Lean 4 theorem statement (no proof)
+2. Use correct Lean 4 syntax
+3. Include necessary imports (import Mathlib)
+4. Use appropriate type annotations
+5. Follow the pattern from the examples above
+
+Output format:
+import Mathlib
+
+theorem [name] [parameters] : [statement] := by sorry

@@ -1,0 +1,142 @@
+[
+  {
+    "id": "algebra_001",
+    "natural_language": "Prove that for all positive real numbers x, x + 1/x >= 2",
+    "formal_statement": "theorem algebra_001 (x : ℝ) (hx : 0 < x) : x + 1/x ≥ 2 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  },
+  {
+    "id": "algebra_002",
+    "natural_language": "For any real number a, prove that a^2 >= 0",
+    "formal_statement": "theorem algebra_002 (a : ℝ) : a^2 ≥ 0 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  },
+  {
+    "id": "algebra_003",
+    "natural_language": "Prove that for positive reals a and b, if a < b then a^2 < b^2",
+    "formal_statement": "theorem algebra_003 (a b : ℝ) (ha : 0 < a) (hb : 0 < b) (hab : a < b) : a^2 < b^2 := by sorry",
+    "category": "algebra",
+    "difficulty": "medium"
+  },
+  {
+    "id": "algebra_004",
+    "natural_language": "For any real number x, prove that x^2 + 1 > 0",
+    "formal_statement": "theorem algebra_004 (x : ℝ) : x^2 + 1 > 0 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  },
+  {
+    "id": "algebra_005",
+    "natural_language": "Prove that for all real numbers a and b, (a + b)^2 = a^2 + 2*a*b + b^2",
+    "formal_statement": "theorem algebra_005 (a b : ℝ) : (a + b)^2 = a^2 + 2*a*b + b^2 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  },
+  {
+    "id": "inequality_001",
+    "natural_language": "For positive real numbers x and y, prove that (x + y)/2 >= sqrt(x*y)",
+    "formal_statement": "theorem inequality_001 (x y : ℝ) (hx : 0 < x) (hy : 0 < y) : (x + y)/2 ≥ real.sqrt(x*y) := by sorry",
+    "category": "inequality",
+    "difficulty": "medium"
+  },
+  {
+    "id": "inequality_002",
+    "natural_language": "Prove that for any real number x, |x| >= 0",
+    "formal_statement": "theorem inequality_002 (x : ℝ) : |x| ≥ 0 := by sorry",
+    "category": "inequality",
+    "difficulty": "easy"
+  },
+  {
+    "id": "inequality_003",
+    "natural_language": "For real numbers a and b, prove that |a + b| <= |a| + |b|",
+    "formal_statement": "theorem inequality_003 (a b : ℝ) : |a + b| ≤ |a| + |b| := by sorry",
+    "category": "inequality",
+    "difficulty": "medium"
+  },
+  {
+    "id": "number_theory_001",
+    "natural_language": "Prove that the sum of two even integers is even",
+    "formal_statement": "theorem number_theory_001 (a b : ℤ) (ha : even a) (hb : even b) : even (a + b) := by sorry",
+    "category": "number_theory",
+    "difficulty": "easy"
+  },
+  {
+    "id": "number_theory_002",
+    "natural_language": "Prove that the product of two odd integers is odd",
+    "formal_statement": "theorem number_theory_002 (a b : ℤ) (ha : odd a) (hb : odd b) : odd (a * b) := by sorry",
+    "category": "number_theory",
+    "difficulty": "easy"
+  },
+  {
+    "id": "number_theory_003",
+    "natural_language": "For any integer n, prove that n^2 - n is even",
+    "formal_statement": "theorem number_theory_003 (n : ℤ) : even (n^2 - n) := by sorry",
+    "category": "number_theory",
+    "difficulty": "medium"
+  },
+  {
+    "id": "geometry_001",
+    "natural_language": "Prove that the sum of angles in a triangle is 180 degrees",
+    "formal_statement": "theorem geometry_001 (a b c : ℝ) : a + b + c = 180 := by sorry",
+    "category": "geometry",
+    "difficulty": "medium"
+  },
+  {
+    "id": "geometry_002",
+    "natural_language": "For a right triangle with legs a and b, prove that a^2 + b^2 = c^2 where c is the hypotenuse",
+    "formal_statement": "theorem geometry_002 (a b c : ℝ) (h : a^2 + b^2 = c^2) : true := by sorry",
+    "category": "geometry",
+    "difficulty": "medium"
+  },
+  {
+    "id": "arithmetic_001",
+    "natural_language": "Prove that 1 + 1 = 2",
+    "formal_statement": "theorem arithmetic_001 : 1 + 1 = 2 := by sorry",
+    "category": "arithmetic",
+    "difficulty": "trivial"
+  },
+  {
+    "id": "arithmetic_002",
+    "natural_language": "For any real number x, prove that x + 0 = x",
+    "formal_statement": "theorem arithmetic_002 (x : ℝ) : x + 0 = x := by sorry",
+    "category": "arithmetic",
+    "difficulty": "trivial"
+  },
+  {
+    "id": "arithmetic_003",
+    "natural_language": "For any real number x, prove that x * 1 = x",
+    "formal_statement": "theorem arithmetic_003 (x : ℝ) : x * 1 = x := by sorry",
+    "category": "arithmetic",
+    "difficulty": "trivial"
+  },
+  {
+    "id": "arithmetic_004",
+    "natural_language": "Prove that 2 + 2 = 4",
+    "formal_statement": "theorem arithmetic_004 : 2 + 2 = 4 := by sorry",
+    "category": "arithmetic",
+    "difficulty": "trivial"
+  },
+  {
+    "id": "arithmetic_005",
+    "natural_language": "For any real number x, prove that x * 0 = 0",
+    "formal_statement": "theorem arithmetic_005 (x : ℝ) : x * 0 = 0 := by sorry",
+    "category": "arithmetic",
+    "difficulty": "trivial"
+  },
+  {
+    "id": "algebra_006",
+    "natural_language": "Prove that for any real number x, x^2 >= 0",
+    "formal_statement": "theorem algebra_006 (x : ℝ) : x^2 ≥ 0 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  },
+  {
+    "id": "algebra_007",
+    "natural_language": "For real numbers a and b, prove that (a - b)^2 = a^2 - 2*a*b + b^2",
+    "formal_statement": "theorem algebra_007 (a b : ℝ) : (a - b)^2 = a^2 - 2*a*b + b^2 := by sorry",
+    "category": "algebra",
+    "difficulty": "easy"
+  }
+]

@@ -1,0 +1,7 @@
+Generate a Lean 4 proof for this theorem:
+
+{formal_statement}
+
+You can use these tactics: {available_tactics}
+
+Output the complete theorem with proof:
