@@ -11,13 +11,12 @@ class ProofTactics:
         self.lean = LeanInterface()
         self.tactics = config.BASIC_TACTICS
     
-    def attempt_proof(self, formal_statement: str, problem_id: Optional[str] = None) -> Dict:
+    def attempt_proof(self, formal_statement: str) -> Dict:
         """
         Attempt to prove a statement using basic tactics
         
         Args:
             formal_statement: Lean 4 theorem statement with 'sorry'
-            problem_id: Optional problem identifier for filename
             
         Returns:
             Dictionary with proof results
@@ -33,12 +32,11 @@ class ProofTactics:
         theorem_decl = formal_statement.replace(":= by sorry", "").strip()
         
         # Try each tactic
-        for i, tactic in enumerate(self.tactics):
+        for tactic in self.tactics:
             proof_code = f"{theorem_decl} := by {tactic}"
             
-            # Compile and check (use proof_tactic suffix for filename)
-            proof_problem_id = f"{problem_id}_proof" if problem_id else None
-            compile_result = self.lean.compile(proof_code, problem_id=proof_problem_id, iteration=i)
+            # Compile and check
+            compile_result = self.lean.compile(proof_code)
             
             attempt_result = {
                 "tactic": tactic,
