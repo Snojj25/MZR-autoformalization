@@ -1,10 +1,6 @@
 """
 Main entry point for RAG-Enhanced Iterative Autoformalization
 """
-import os
-# Set tokenizers parallelism before any imports that use it
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
 import argparse
 import json
 from src.pipeline import AutoformalizationPipeline
