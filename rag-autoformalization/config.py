@@ -24,6 +24,12 @@ class Config:
     EMBEDDINGS_PATH = os.path.join(DATA_DIR, "embeddings", "minif2f_embeddings.pkl")
     MINIF2F_PATH = os.path.join(DATA_DIR, "minif2f_statements.json")
     
+    # Lean examples directory (for compilation with Mathlib)
+    # Get the project root (assumes config.py is in rag-autoformalization/)
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    LEAN_EXAMPLES_DIR = os.path.join(PROJECT_ROOT, "lean-examples")
+    LEAN_EXAMPLES_SRC_DIR = os.path.join(LEAN_EXAMPLES_DIR, "LeanExamples")
+    
     # Proof tactics
     BASIC_TACTICS = [
         "simp",
