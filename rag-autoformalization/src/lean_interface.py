@@ -2,56 +2,86 @@
 Interface for interacting with Lean 4 compiler
 """
 import subprocess
-import tempfile
 import os
 import re
-from typing import Dict, List
+import time
+from datetime import datetime
+from typing import Dict, List, Optional
 from config import config
+
+# Set tokenizers parallelism to avoid warnings when forking
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 class LeanInterface:
     def __init__(self):
         """Initialize Lean interface"""
         self.lean_path = config.LEAN_PATH
         self.timeout = config.LEAN_TIMEOUT
+        self.lean_examples_dir = config.LEAN_EXAMPLES_DIR
+        self.lean_examples_src_dir = config.LEAN_EXAMPLES_SRC_DIR
+        
+        # Ensure the source directory exists
+        os.makedirs(self.lean_examples_src_dir, exist_ok=True)
     
-    def compile(self, lean_code: str) -> Dict:
+    def compile(self, lean_code: str, problem_id: Optional[str] = None, iteration: Optional[int] = None) -> Dict:
         """
         Compile Lean 4 code and return results
         
         Args:
             lean_code: Lean 4 code to compile
+            problem_id: Optional problem identifier for filename
+            iteration: Optional iteration number for filename
             
         Returns:
-            Dictionary with success status, errors, and messages
+            Dictionary with success status, errors, messages, and file path
         """
-        # Create temporary file
-        with tempfile.NamedTemporaryFile(
-            mode='w', 
-            suffix='.lean', 
-            delete=False
-        ) as f:
-            f.write(lean_code)
-            temp_file = f.name
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if problem_id:
+            # Sanitize problem_id for filename
+            safe_problem_id = re.sub(r'[^a-zA-Z0-9_-]', '_', str(problem_id))[:50]
+            if iteration is not None:
+                filename = f"pipeline_{safe_problem_id}_iter{iteration}_{timestamp}.lean"
+            else:
+                filename = f"pipeline_{safe_problem_id}_{timestamp}.lean"
+        else:
+            if iteration is not None:
+                filename = f"pipeline_iter{iteration}_{timestamp}.lean"
+            else:
+                filename = f"pipeline_{timestamp}.lean"
+        
+        # Create file in lean-examples/LeanExamples/
+        file_path = os.path.join(self.lean_examples_src_dir, filename)
         
         try:
-            # Run Lean compiler
+            # Write Lean code to file
+            with open(file_path, 'w') as f:
+                f.write(lean_code)
+            
+            # Compile using lake build from the lean-examples directory
+            # Use lake env lean to get proper Mathlib path
             result = subprocess.run(
-                [self.lean_path, temp_file],
+                ["lake", "env", "lean", os.path.join("LeanExamples", filename)],
+                cwd=self.lean_examples_dir,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout
             )
-            
+
             # Parse results
             success = result.returncode == 0
-            errors = self._parse_errors(result.stderr) if not success else []
+            # Parse errors from both stderr and stdout (Lean may output errors to either)
+            all_output = result.stderr + "\n" + result.stdout if result.stderr else result.stdout
+            errors = self._parse_errors(all_output) if not success else []
             
             return {
                 "success": success,
                 "errors": errors,
                 "stderr": result.stderr,
                 "stdout": result.stdout,
-                "error_categories": self._categorize_errors(errors)
+                "error_categories": self._categorize_errors(errors),
+                "file_path": file_path,
+                "filename": filename
             }
             
         except subprocess.TimeoutExpired:
@@ -60,25 +90,45 @@ class LeanInterface:
                 "errors": ["Compilation timeout"],
                 "stderr": "Timeout",
                 "stdout": "",
-                "error_categories": {"timeout": ["Compilation timeout"]}
+                "error_categories": {"timeout": ["Compilation timeout"]},
+                "file_path": file_path,
+                "filename": filename
             }
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        except Exception as e:
+            return {
+                "success": False,
+                "errors": [f"Compilation exception: {str(e)}"],
+                "stderr": str(e),
+                "stdout": "",
+                "error_categories": {"exception": [str(e)]},
+                "file_path": file_path,
+                "filename": filename
+            }
+        # Note: We keep the file for debugging/visualization instead of deleting it
     
-    def _parse_errors(self, stderr: str) -> List[str]:
-        """Extract error messages from stderr"""
-        if not stderr:
-            return []
+    def _parse_errors(self, output: str) -> List[str]:
+        """Extract error messages from Lean output"""
+        if not output:
+            return ["No error output available"]
         
-        # Simple extraction - get lines that look like errors
         errors = []
-        for line in stderr.split('\n'):
-            if 'error' in line.lower() or 'warning' in line.lower():
-                errors.append(line.strip())
+        lines = output.split('\n')
         
-        return errors if errors else [stderr]
+        # Try to capture error blocks (lines containing "error", "warning", etc.)
+        for i, line in enumerate(lines):
+            line_lower = line.lower()
+            if any(keyword in line_lower for keyword in ['error', 'warning', 'failed', 'unexpected']):
+                # Capture this line and next few lines for context
+                error_block = line.strip()
+                # Add up to 3 more lines for context
+                for j in range(1, min(4, len(lines) - i)):
+                    next_line = lines[i + j].strip()
+                    if next_line:
+                        error_block += "\n" + next_line
+                errors.append(error_block)
+        
+        # If no specific errors found, return the entire output
+        return errors if errors else [output.strip()] if output.strip() else ["Unknown error occurred"]
     
     def _categorize_errors(self, errors: List[str]) -> Dict[str, List[str]]:
         """Categorize errors by type"""

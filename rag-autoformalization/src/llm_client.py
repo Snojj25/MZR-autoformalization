@@ -1,17 +1,19 @@
 """
 LLM Client for interacting with OpenAI API
 """
-import openai
+from openai import OpenAI
+
 from typing import Optional
 from config import config
+
+client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 class LLMClient:
     def __init__(self):
         """Initialize OpenAI client"""
-        openai.api_key = config.OPENAI_API_KEY
         self.model = config.OPENAI_MODEL
         self.temperature = config.OPENAI_TEMPERATURE
-    
+
     def generate(self, prompt: str, system_message: str = None) -> str:
         """
         Generate completion from OpenAI
@@ -27,19 +29,17 @@ class LLMClient:
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
-        
+
         try:
-            response = openai.ChatCompletion.create(
-                model=self.model,
-                messages=messages,
-                temperature=self.temperature,
-                max_tokens=1000
-            )
+            response = client.chat.completions.create(model=self.model,
+            messages=messages,
+            # temperature=self.temperature,
+            max_completion_tokens=1000)
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
             return None
-    
+
     def translate_to_lean(
         self, 
         natural_language: str, 
@@ -74,11 +74,11 @@ class LLMClient:
                 previous_attempt=previous_attempt,
                 compiler_errors=compiler_errors
             )
-        
+
         system_message = "You are an expert in Lean 4 theorem proving and mathematical formalization."
-        
+
         return self.generate(prompt, system_message)
-    
+
     def _load_prompt(self, filename: str) -> str:
         """Load prompt template from file"""
         import os

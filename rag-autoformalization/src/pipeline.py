@@ -81,14 +81,20 @@ class AutoformalizationPipeline:
             
             # Compile and get feedback
             print("    - Compiling with Lean 4...")
-            compile_result = self.lean.compile(formal_statement)
+            compile_result = self.lean.compile(
+                formal_statement,
+                problem_id=problem_id,
+                iteration=iteration
+            )
             
             iteration_data = {
                 "iteration": iteration + 1,
                 "formal_statement": formal_statement,
                 "compilation_success": compile_result["success"],
                 "errors": compile_result["errors"],
-                "error_categories": compile_result["error_categories"]
+                "error_categories": compile_result["error_categories"],
+                "lean_file_path": compile_result.get("file_path"),
+                "lean_filename": compile_result.get("filename")
             }
             results["iterations"].append(iteration_data)
             
@@ -110,7 +116,7 @@ class AutoformalizationPipeline:
         # Step 3: Proof Attempt (if compilation successful)
         if results["compilation_success"]:
             print("\n[3/4] Attempting automated proof...")
-            proof_result = self.proof_tactics.attempt_proof(results["final_statement"])
+            proof_result = self.proof_tactics.attempt_proof(results["final_statement"], problem_id=problem_id)
             
             results["proof_success"] = proof_result["proved"]
             results["proof_tactic"] = proof_result["tactic"]
