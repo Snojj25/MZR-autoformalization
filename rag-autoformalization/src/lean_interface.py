@@ -23,7 +23,7 @@ class LeanInterface:
         # Ensure the source directory exists
         os.makedirs(self.lean_examples_src_dir, exist_ok=True)
     
-    def compile(self, lean_code: str, problem_id: Optional[str] = None, iteration: Optional[int] = None) -> Dict:
+    def compile(self, lean_code: str, iteration: Optional[int] = None, is_llm_fallback: bool = False) -> Dict:
         """
         Compile Lean 4 code and return results
         
@@ -31,41 +31,40 @@ class LeanInterface:
             lean_code: Lean 4 code to compile
             problem_id: Optional problem identifier for filename
             iteration: Optional iteration number for filename
+            is_llm_fallback: Flag indicating if this is from LLM proof fallback
             
         Returns:
             Dictionary with success status, errors, messages, and file path
         """
+        
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        if problem_id:
-            # Sanitize problem_id for filename
-            safe_problem_id = re.sub(r'[^a-zA-Z0-9_-]', '_', str(problem_id))[:50]
-            if iteration is not None:
-                filename = f"pipeline_{safe_problem_id}_iter{iteration}_{timestamp}.lean"
-            else:
-                filename = f"pipeline_{safe_problem_id}_{timestamp}.lean"
-        else:
-            if iteration is not None:
-                filename = f"pipeline_iter{iteration}_{timestamp}.lean"
-            else:
-                filename = f"pipeline_{timestamp}.lean"
+        fallback_suffix = "_llm_fallback" if is_llm_fallback else ""
         
-        # Create file in lean-examples/LeanExamples/
+        if iteration is not None:
+            filename = f"pipeline_iter{iteration}{fallback_suffix}_{timestamp}.lean"
+        else:
+            filename = f"pipeline{fallback_suffix}_{timestamp}.lean"
+        
+        # Create file in run-specific folder or default location
         file_path = os.path.join(self.lean_examples_src_dir, filename)
+        
+        # Use longer timeout for LLM fallback attempts (they may be more complex)
+        compile_timeout = self.timeout * 2 if is_llm_fallback else self.timeout
         
         try:
             # Write Lean code to file
             with open(file_path, 'w') as f:
                 f.write(lean_code)
             
-            # Compile using lake build from the lean-examples directory
-            # Use lake env lean to get proper Mathlib path
+            relative_path = os.path.join("LeanExamples", filename)
+            
             result = subprocess.run(
-                ["lake", "env", "lean", os.path.join("LeanExamples", filename)],
+                ["lake", "env", "lean", relative_path],
                 cwd=self.lean_examples_dir,
                 capture_output=True,
                 text=True,
-                timeout=self.timeout
+                timeout=compile_timeout
             )
 
             # Parse results

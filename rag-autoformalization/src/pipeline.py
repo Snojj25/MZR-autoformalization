@@ -12,20 +12,17 @@ import time
 class AutoformalizationPipeline:
     def __init__(self):
         """Initialize the pipeline with all components"""
-        print("Initializing pipeline components...")
         self.rag = MathLibRAG()
         self.llm = LLMClient()
         self.lean = LeanInterface()
-        self.proof_tactics = ProofTactics()
-        print("Pipeline ready!")
+        self.proof_tactics = ProofTactics(llm_client=self.llm)
     
-    def process(self, natural_language: str, problem_id: str = None) -> Dict:
+    def process(self, natural_language: str) -> Dict:
         """
         Process a natural language problem through the full pipeline
         
         Args:
             natural_language: Mathematical problem in natural language
-            problem_id: Optional identifier for logging
             
         Returns:
             Complete results dictionary
@@ -33,7 +30,6 @@ class AutoformalizationPipeline:
         start_time = time.time()
         
         results = {
-            "problem_id": problem_id,
             "natural_language": natural_language,
             "iterations": [],
             "final_statement": None,
@@ -42,7 +38,7 @@ class AutoformalizationPipeline:
             "proof_tactic": None,
             "total_iterations": 0,
             "total_time": 0,
-            "rag_examples": []
+            "rag_examples": [],
         }
         
         # Step 1: RAG Retrieval
@@ -54,8 +50,9 @@ class AutoformalizationPipeline:
         similar_statements = self.rag.retrieve(natural_language)
         results["rag_examples"] = similar_statements
         few_shot_prompt = self.rag.format_for_prompt(similar_statements)
+        proof_examples = self.rag.format_proof_examples(similar_statements)
         
-        print(f"Retrieved {len(similar_statements)} similar examples")
+        print(f"Retrieved {len(similar_statements)} similar examples: {similar_statements}")
         
         # Step 2: Iterative Formalization with Compiler Feedback
         print("\n[2/4] Starting iterative formalization...")
@@ -83,7 +80,6 @@ class AutoformalizationPipeline:
             print("    - Compiling with Lean 4...")
             compile_result = self.lean.compile(
                 formal_statement,
-                problem_id=problem_id,
                 iteration=iteration
             )
             
@@ -105,7 +101,7 @@ class AutoformalizationPipeline:
                 results["total_iterations"] = iteration + 1
                 break
             else:
-                print(f"    ✗ Compilation failed: {len(compile_result['errors'])} errors")
+                print(f"    ✗ Compilation failed: {compile_result['errors']}")
                 if compile_result["error_categories"]:
                     print(f"      Error types: {list(compile_result['error_categories'].keys())}")
                 
@@ -116,7 +112,10 @@ class AutoformalizationPipeline:
         # Step 3: Proof Attempt (if compilation successful)
         if results["compilation_success"]:
             print("\n[3/4] Attempting automated proof...")
-            proof_result = self.proof_tactics.attempt_proof(results["final_statement"], problem_id=problem_id)
+            proof_result = self.proof_tactics.attempt_proof(
+                results["final_statement"],
+                proof_examples=proof_examples
+            )
             
             results["proof_success"] = proof_result["proved"]
             results["proof_tactic"] = proof_result["tactic"]
@@ -145,8 +144,7 @@ class AutoformalizationPipeline:
             print(f"{'#'*60}")
             
             result = self.process(
-                natural_language=problem.get("natural_language", problem),
-                problem_id=problem.get("id", f"problem_{i}")
+                natural_language=problem.get("natural_language", problem)
             )
             all_results.append(result)
         

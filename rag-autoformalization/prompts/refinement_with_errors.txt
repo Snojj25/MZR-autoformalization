@@ -10,9 +10,10 @@ Previous Attempt:
 Compiler Errors:
 {compiler_errors}
 
-Please fix the errors and generate a corrected Lean 4 statement. Focus on:
+Please fix the errors and generate a corrected Lean 4 statement (use 'sorry' for the proof). Focus on:
 1. Syntax errors (missing tokens, incorrect structure)
 2. Type mismatches
 3. Unknown identifiers (use correct Mathlib imports)
+4. Follow the pattern from the examples above
 
-Output ONLY the corrected Lean 4 code:
+Output ONLY the corrected Lean 4 code (include imports if needed):

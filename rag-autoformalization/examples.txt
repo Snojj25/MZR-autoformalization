@@ -1,0 +1,9 @@
+
+python3 main.py --mode single --problem 
+
+"Prove by induction that the sum of the first n natural numbers is equal to n(n+1)/2."
+"Algebra problem: If σ is a bijection from reals to reals such that σ(x) = 5x - 12 and σ(x+1) = σ⁻¹(x), then x equals 47/24"
+"Prove that if the composition of functions g∘f is injective, then f must be injective."
+"Prove that the square root of 2 is irrational."
+
+

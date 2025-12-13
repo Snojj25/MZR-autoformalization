@@ -2,6 +2,8 @@ Generate a Lean 4 proof for this theorem:
 
 {formal_statement}
 
-You can use these tactics: {available_tactics}
+{proof_examples}
 
-Output the complete theorem with proof:
+{failed_attempts_note}
+
+Output the complete theorem with proof. Use appropriate Lean 4 tactics to construct the proof. Follow the patterns from the examples above.

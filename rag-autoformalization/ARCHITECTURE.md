@@ -51,7 +51,7 @@ Retrieval-Augmented Generation module for finding similar problems.
 - `retrieve(query, base) → List[Dict]` - Find similar problems
 - `format_for_prompt(statements) → str` - Create few-shot examples for LLM
 
-**Data:** Loads from `data/minif2f_statements.json` (pre-processed miniF2F theorems)
+**Data:** Loads from `data/f2f_statements.json` (pre-processed F2F theorems)
 
 ### 3. **LLMClient** (`src/llm_client.py`)
 Interface to OpenAI's GPT models for code generation.

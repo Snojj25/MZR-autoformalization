@@ -34,7 +34,7 @@ class LLMClient:
             response = client.chat.completions.create(model=self.model,
             messages=messages,
             # temperature=self.temperature,
-            max_completion_tokens=1000)
+            max_completion_tokens=10000)
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"Error calling OpenAI API: {e}")
@@ -77,6 +77,42 @@ class LLMClient:
 
         system_message = "You are an expert in Lean 4 theorem proving and mathematical formalization."
 
+        return self.generate(prompt, system_message)
+
+    def generate_proof_tactic(
+        self,
+        formal_statement: str,
+        failed_attempts: list = None,
+        proof_examples: str = ""
+    ) -> Optional[str]:
+        """
+        Generate a proof tactic or tactic combination using OpenAI
+        
+        Args:
+            formal_statement: Lean 4 theorem statement (with 'sorry')
+            failed_attempts: List of tactics that were already tried and failed
+            proof_examples: Few-shot examples of similar theorems with proofs
+            
+        Returns:
+            Lean 4 proof code with tactics, or None if generation fails
+        """
+        # Load proof generation prompt
+        prompt = self._load_prompt("proof_generation.txt")
+        
+        # Format note about failed attempts (if any)
+        if failed_attempts:
+            failed_attempts_note = f"Note: The following tactics were already tried and failed: {', '.join(failed_attempts)}. Try a different approach, different tactics, or a combination of tactics."
+        else:
+            failed_attempts_note = ""
+        
+        prompt = prompt.format(
+            formal_statement=formal_statement,
+            proof_examples=proof_examples,
+            failed_attempts_note=failed_attempts_note
+        )
+        
+        system_message = "You are an expert in Lean 4 theorem proving. Generate a complete Lean 4 theorem with proof using appropriate tactics. Output ONLY the complete theorem statement with the proof (replace 'sorry' with the actual proof)."
+        
         return self.generate(prompt, system_message)
 
     def _load_prompt(self, filename: str) -> str:

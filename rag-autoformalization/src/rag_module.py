@@ -20,7 +20,7 @@ class MathLibRAG:
         self._build_or_load_index()
         
     def _load_statements(self) -> List[Dict]:
-        """Load miniF2F statements from JSON file"""
+        """Load F2F statements from JSON file"""
         with open(config.MINIF2F_PATH, 'r') as f:
             return json.load(f)
     
@@ -98,5 +98,27 @@ class MathLibRAG:
         for i, stmt in enumerate(similar_statements, 1):
             formatted += f"Example {i}:\n"
             formatted += f"Natural Language: {stmt['natural_language']}\n"
-            formatted += f"Formal Statement: {stmt['formal_statement']}\n\n"
+            formatted += f"Lean Statement: {stmt['lean_statement']}\n"
+            # Include proof if it exists
+            if stmt.get('has_proof', False) and stmt.get('proof') and stmt['proof'] != 'sorry':
+                formatted += f"Proof: {stmt['proof']}\n"
+            formatted += "\n"
+        return formatted
+    
+    def format_proof_examples(self, similar_statements: List[Dict]) -> str:
+        """Format retrieved statements with proofs as examples for proof generation"""
+        # Filter to only statements that have proofs
+        statements_with_proofs = [
+            stmt for stmt in similar_statements 
+            if stmt.get('has_proof', False) and stmt.get('proof') and stmt['proof'] != 'sorry'
+        ]
+        
+        if not statements_with_proofs:
+            return ""
+        
+        formatted = "Here are similar theorems with their proofs as examples:\n\n"
+        for i, stmt in enumerate(statements_with_proofs, 1):
+            formatted += f"Example {i}:\n"
+            formatted += f"Theorem: {stmt['lean_statement']}\n"
+            formatted += f"Proof: {stmt['proof']}\n\n"
         return formatted

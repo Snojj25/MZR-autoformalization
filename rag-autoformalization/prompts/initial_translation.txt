@@ -6,7 +6,7 @@ Now translate this problem:
 Natural Language: {natural_language}
 
 Requirements:
-1. Output ONLY the Lean 4 theorem statement (no proof)
+1. Output ONLY the Lean 4 theorem statement (use 'sorry' for the proof)
 2. Use correct Lean 4 syntax
 3. Include necessary imports (import Mathlib)
 4. Use appropriate type annotations
