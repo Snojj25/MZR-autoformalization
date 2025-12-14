@@ -62,42 +62,66 @@ class ProofTactics:
             else:
                 failed_tactics.append(tactic)
         
-        # If manual tactics failed and LLM client is available, try LLM-generated proof
+        # If manual tactics failed and LLM client is available, try LLM-generated proof with refinements
         if not results["proved"] and self.llm_client is not None:
             results["llm_fallback_attempted"] = True
             print("    - Manual tactics failed, trying LLM-generated proof...")
             
-            # Generate proof using LLM
-            llm_proof = self.llm_client.generate_proof_tactic(
-                formal_statement=formal_statement,
-                failed_attempts=failed_tactics,
-                proof_examples=proof_examples
-            )
+            previous_proof_attempt = None
+            compiler_errors = None
             
-            if llm_proof:
+            # Try multiple iterations of LLM proof generation with refinements
+            for llm_iteration in range(config.MAX_PROOF_ITERATIONS):
+                if llm_iteration > 0:
+                    print(f"    - Refining LLM-generated proof (attempt {llm_iteration + 1}/{config.MAX_PROOF_ITERATIONS})...")
+                else:
+                    print("    - Generating initial LLM proof...")
+                
+                # Generate proof using LLM (initial or refinement)
+                llm_proof = self.llm_client.generate_proof_tactic(
+                    formal_statement=formal_statement,
+                    failed_attempts=failed_tactics if llm_iteration == 0 else None,
+                    proof_examples=proof_examples,
+                    previous_attempt=previous_proof_attempt,
+                    compiler_errors=compiler_errors
+                )
+                
+                if not llm_proof:
+                    print(f"    ✗ LLM proof generation failed (attempt {llm_iteration + 1})")
+                    # If generation fails, we can't continue refining
+                    break
+
                 # Try to compile the LLM-generated proof
                 # Use a special iteration number to distinguish from manual attempts
                 # Set is_llm_fallback flag to indicate this is from LLM fallback
-                compile_result = self.lean.compile(llm_proof, iteration=len(self.tactics), is_llm_fallback=True)
+                compile_result = self.lean.compile(
+                    llm_proof, 
+                    iteration=len(self.tactics) + llm_iteration, 
+                    is_llm_fallback=True
+                )
                 
                 attempt_result = {
-                    "tactic": "llm_generated",
+                    "tactic": f"llm_generated_iter_{llm_iteration + 1}",
                     "success": compile_result["success"],
                     "errors": compile_result["errors"],
-                    "proof_code": llm_proof
+                    "proof_code": llm_proof,
+                    "iteration": llm_iteration + 1
                 }
                 results["attempts"].append(attempt_result)
                 
                 if compile_result["success"]:
                     results["proved"] = True
-                    results["tactic"] = "llm_generated"
+                    results["tactic"] = f"llm_generated_iter_{llm_iteration + 1}"
                     results["proof_code"] = llm_proof
-                    print("    ✓ LLM-generated proof successful!")
+                    print(f"    ✓ LLM-generated proof successful (after {llm_iteration + 1} attempt(s))!")
+                    break
                 else:
-                    print(f"    ✗ LLM-generated proof failed: {len(compile_result['errors'])} errors")
-            else:
-                results["llm_fallback_attempted"] = False
-                print("    ✗ LLM proof generation failed")
+                    print(f"    ✗ LLM-generated proof failed (attempt {llm_iteration + 1}): {len(compile_result['errors'])} errors")
+                    # Prepare for next iteration
+                    previous_proof_attempt = llm_proof
+                    compiler_errors = "\n".join(compile_result["errors"][:5])  # Top 5 errors
+            
+                    
         else:
             results["llm_fallback_attempted"] = False
         

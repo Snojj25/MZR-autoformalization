@@ -6,4 +6,6 @@ Generate a Lean 4 proof for this theorem:
 
 {failed_attempts_note}
 
+IMPORTANT: Only change the proof part (replace 'sorry' with actual tactics). Do NOT modify the theorem statement itself. Keep the exact same statement declaration and only provide the proof.
+
 Output the complete theorem with proof. Use appropriate Lean 4 tactics to construct the proof. Follow the patterns from the examples above.

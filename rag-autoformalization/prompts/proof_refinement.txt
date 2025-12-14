@@ -1,0 +1,23 @@
+You previously attempted to generate a proof for this theorem, but the Lean 4 compiler reported errors.
+
+{proof_examples}
+
+Original Theorem Statement:
+{formal_statement}
+
+Previous Proof Attempt:
+{previous_attempt}
+
+Compiler Errors:
+{compiler_errors}
+
+IMPORTANT: Only change the proof part. Do NOT modify the theorem statement itself. Keep the exact same statement declaration and only fix the proof tactics.
+
+Please fix the errors and generate a corrected proof. Focus on:
+1. Syntax errors in the proof tactics
+2. Type mismatches in the proof
+3. Incorrect tactic usage
+4. Missing tactics or tactic combinations
+5. Follow the patterns from the examples above
+
+Output ONLY the complete theorem with the corrected proof (keep the statement exactly the same, only change the proof):

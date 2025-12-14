@@ -15,6 +15,7 @@ class Config:
     
     # Pipeline settings
     MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "3"))
+    MAX_PROOF_ITERATIONS = int(os.getenv("MAX_PROOF_ITERATIONS", "3"))
     TOP_K_RETRIEVAL = int(os.getenv("TOP_K_RETRIEVAL", "3"))
     
     # Paths
