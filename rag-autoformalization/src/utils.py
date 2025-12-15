@@ -7,6 +7,9 @@ from datetime import datetime
 from typing import List, Dict
 import pandas as pd
 from config import config
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
 
 def save_results(results: List[Dict], filename: str = None):
     """Save results to JSON file"""
@@ -74,25 +77,54 @@ def _calculate_by_iteration(results: List[Dict]) -> Dict:
     return by_iteration
 
 def print_summary(results: List[Dict]):
-    """Print a formatted summary of results"""
+    """Print a formatted summary of results using rich"""
+    console = Console()
     metrics = calculate_metrics(results)
     
-    print("\n" + "="*60)
-    print("EVALUATION SUMMARY")
-    print("="*60)
-    print(f"Total Problems: {metrics['total_problems']}")
-    print(f"\nCompilation Success Rate: {metrics['compilation_success_rate']:.1%}")
-    print(f"Proof Success Rate: {metrics['proof_success_rate']:.1%}")
-    print(f"First-Attempt Success Rate: {metrics['first_attempt_success_rate']:.1%}")
-    print(f"\nAverage Iterations (when successful): {metrics['avg_iterations_to_success']:.2f}")
-    print(f"Average Time per Problem: {metrics['avg_time_per_problem']:.2f}s")
+    # Main metrics table
+    summary_table = Table(title="Evaluation Summary", show_header=True, header_style="bold magenta")
+    summary_table.add_column("Metric", style="cyan", width=30)
+    summary_table.add_column("Value", style="white", justify="right", width=20)
     
-    print(f"\nSuccess by Iteration:")
-    for k, v in metrics['metrics_by_iteration'].items():
-        iter_num = k.split('_')[1]
-        print(f"  Iteration {iter_num}: {v} problems")
+    summary_table.add_row("Total Problems", str(metrics['total_problems']))
+    summary_table.add_row(
+        "Compilation Success Rate",
+        f"[green]{metrics['compilation_success_rate']:.1%}[/green]"
+    )
+    summary_table.add_row(
+        "Proof Success Rate",
+        f"[green]{metrics['proof_success_rate']:.1%}[/green]"
+    )
+    summary_table.add_row(
+        "First-Attempt Success Rate",
+        f"[green]{metrics['first_attempt_success_rate']:.1%}[/green]"
+    )
+    summary_table.add_row(
+        "Avg Iterations (when successful)",
+        f"{metrics['avg_iterations_to_success']:.2f}"
+    )
+    summary_table.add_row(
+        "Avg Time per Problem",
+        f"{metrics['avg_time_per_problem']:.2f}s"
+    )
     
-    print("="*60 + "\n")
+    console.print()
+    console.print(summary_table)
+    
+    # Success by iteration table
+    if metrics['metrics_by_iteration']:
+        iteration_table = Table(title="Success by Iteration", show_header=True, header_style="bold blue")
+        iteration_table.add_column("Iteration", style="cyan", justify="center", width=15)
+        iteration_table.add_column("Problems Solved", style="green", justify="right", width=20)
+        
+        for k, v in metrics['metrics_by_iteration'].items():
+            iter_num = k.split('_')[1]
+            iteration_table.add_row(f"Iteration {iter_num}", str(v))
+        
+        console.print()
+        console.print(iteration_table)
+    
+    console.print()
 
 def create_results_dataframe(results: List[Dict]) -> pd.DataFrame:
     """Convert results to pandas DataFrame for analysis"""

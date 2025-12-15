@@ -8,14 +8,26 @@ from src.lean_interface import LeanInterface
 from src.proof_tactics import ProofTactics
 from config import config
 import time
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
 class AutoformalizationPipeline:
-    def __init__(self):
-        """Initialize the pipeline with all components"""
+    def __init__(self, disable_manual_proof: bool = False):
+        """
+        Initialize the pipeline with all components
+        
+        Args:
+            disable_manual_proof: If True, skip manual tactics in proof generation
+        """
         self.rag = MathLibRAG()
         self.llm = LLMClient()
         self.lean = LeanInterface()
         self.proof_tactics = ProofTactics(llm_client=self.llm)
+        self.console = Console()
+        self.disable_manual_proof = disable_manual_proof
     
     def process(self, natural_language: str) -> Dict:
         """
@@ -42,46 +54,71 @@ class AutoformalizationPipeline:
         }
         
         # Step 1: RAG Retrieval
-        print(f"\n{'='*60}")
-        print(f"Processing: {natural_language[:80]}...")
-        print(f"{'='*60}")
-        print("\n[1/4] Retrieving similar examples...")
+        self.console.print()
+        self.console.print(Panel(
+            f"[bold blue]RAG-Enhanced Autoformalization Pipeline[/bold blue]\n"
+            f"[dim]{natural_language[:80]}{'...' if len(natural_language) > 80 else ''}[/dim]",
+            border_style="blue"
+        ))
+        self.console.print()
+        self.console.print(Panel("[bold cyan][1/4] RAG Retrieval[/bold cyan]", border_style="cyan"))
         
-        similar_statements = self.rag.retrieve(natural_language)
+        with self.console.status("[bold green]Loading embeddings and searching...", spinner="dots"):
+            similar_statements = self.rag.retrieve(natural_language)
+        
         results["rag_examples"] = similar_statements
         few_shot_prompt = self.rag.format_for_prompt(similar_statements)
         proof_examples = self.rag.format_proof_examples(similar_statements)
         
-        print(f"Retrieved {len(similar_statements)} similar examples: {similar_statements}")
+        # Display RAG examples in a table
+        if similar_statements:
+            rag_table = Table(title=f"Retrieved {len(similar_statements)} Similar Examples", show_header=True, header_style="bold magenta")
+            rag_table.add_column("Rank", style="cyan", width=6)
+            rag_table.add_column("Natural Language", style="white", width=50)
+            rag_table.add_column("Similarity", style="green", justify="right", width=10)
+            
+            for idx, example in enumerate(similar_statements, 1):
+                nl_text = example.get('natural_language', '')[:60] + ('...' if len(example.get('natural_language', '')) > 60 else '')
+                similarity = example.get('similarity_score', 0)
+                rag_table.add_row(str(idx), nl_text, f"{similarity:.3f}")
+            
+            self.console.print(rag_table)
+        else:
+            self.console.print("[yellow]⚠ No similar examples found[/yellow]")
         
         # Step 2: Iterative Formalization with Compiler Feedback
-        print("\n[2/4] Starting iterative formalization...")
+        self.console.print()
+        self.console.print(Panel("[bold yellow][2/4] Iterative Formalization[/bold yellow]", border_style="yellow"))
         
         previous_attempt = None
         compiler_errors = None
         
         for iteration in range(config.MAX_ITERATIONS):
-            print(f"\n  Iteration {iteration + 1}/{config.MAX_ITERATIONS}")
+            self.console.print(f"\n[bold]Iteration {iteration + 1}/{config.MAX_ITERATIONS}[/bold]")
             
             # Generate formal statement
-            print("    - Generating Lean 4 statement...")
-            formal_statement = self.llm.translate_to_lean(
-                natural_language=natural_language,
-                few_shot_examples=few_shot_prompt,
-                previous_attempt=previous_attempt,
-                compiler_errors=compiler_errors
-            )
+            with self.console.status("[bold green]Generating Lean 4 statement...", spinner="dots"):
+                formal_statement = self.llm.translate_to_lean(
+                    natural_language=natural_language,
+                    few_shot_examples=few_shot_prompt,
+                    previous_attempt=previous_attempt,
+                    compiler_errors=compiler_errors
+                )
             
             if formal_statement is None:
-                print("    - LLM generation failed")
+                self.console.print("[red]✗ LLM generation failed[/red]")
                 break
             
+            # Display generated code
+            code_syntax = Syntax(formal_statement, "lean", theme="monokai", line_numbers=True)
+            self.console.print(Panel(code_syntax, title=f"[bold]Generated Code (Iteration {iteration + 1})[/bold]", border_style="blue"))
+            
             # Compile and get feedback
-            print("    - Compiling with Lean 4...")
-            compile_result = self.lean.compile(
-                formal_statement,
-                iteration=iteration
-            )
+            with self.console.status("[bold yellow]Compiling with Lean 4...", spinner="dots"):
+                compile_result = self.lean.compile(
+                    formal_statement,
+                    iteration=iteration
+                )
             
             iteration_data = {
                 "iteration": iteration + 1,
@@ -95,26 +132,46 @@ class AutoformalizationPipeline:
             results["iterations"].append(iteration_data)
             
             if compile_result["success"]:
-                print("    ✓ Compilation successful!")
+                self.console.print("[bold green]✓ Compilation successful![/bold green]")
                 results["final_statement"] = formal_statement
                 results["compilation_success"] = True
                 results["total_iterations"] = iteration + 1
                 break
             else:
-                print(f"    ✗ Compilation failed: {compile_result['errors']}")
+                self.console.print("[bold red]✗ Compilation failed[/bold red]")
+                
+                # Show errors
+                if compile_result["errors"]:
+                    error_text = "\n".join(compile_result["errors"][:5])
+                    self.console.print(Panel(
+                        error_text,
+                        title="[bold red]Compilation Errors[/bold red]",
+                        border_style="red"
+                    ))
+                
                 if compile_result["error_categories"]:
-                    print(f"      Error types: {list(compile_result['error_categories'].keys())}")
+                    error_types = ", ".join(compile_result["error_categories"].keys())
+                    self.console.print(f"[dim]Error types: {error_types}[/dim]")
                 
                 # Prepare for next iteration
                 previous_attempt = formal_statement
                 compiler_errors = "\n".join(compile_result["errors"][:5])  # Top 5 errors
+                
+                if iteration < config.MAX_ITERATIONS - 1:
+                    self.console.print("[yellow]→ Refining with compiler feedback...[/yellow]")
         
         # Step 3: Proof Attempt (if compilation successful)
         if results["compilation_success"]:
-            print("\n[3/4] Attempting automated proof...")
+            self.console.print()
+            self.console.print(Panel("[bold magenta][3/4] Automated Proof Generation[/bold magenta]", border_style="magenta"))
+            
+            if self.disable_manual_proof:
+                self.console.print("[yellow]⚠ Manual tactics disabled, using LLM only[/yellow]")
+            
             proof_result = self.proof_tactics.attempt_proof(
                 results["final_statement"],
-                proof_examples=proof_examples
+                proof_examples=proof_examples,
+                disable_manual=self.disable_manual_proof
             )
             
             results["proof_success"] = proof_result["proved"]
@@ -122,16 +179,32 @@ class AutoformalizationPipeline:
             results["proof_attempts"] = proof_result["attempts"]
             
             if proof_result["proved"]:
-                print(f"    ✓ Proof found using tactic: {proof_result['tactic']}")
+                self.console.print(f"[bold green]✓ Proof found using tactic: [cyan]{proof_result['tactic']}[/cyan][/bold green]")
+                
+                # Display final proof code
+                final_code = Syntax(proof_result["proof_code"], "lean", theme="monokai", line_numbers=True)
+                self.console.print(Panel(
+                    final_code,
+                    title="[bold green]Final Proof[/bold green]",
+                    border_style="green"
+                ))
                 results["final_statement"] = proof_result["proof_code"]
             else:
-                print(f"    ✗ No proof found (tried {len(proof_result['attempts'])} tactics)")
+                self.console.print(f"[bold red]✗ No proof found (tried {len(proof_result['attempts'])} tactics)[/bold red]")
         else:
-            print("\n[3/4] Skipping proof attempt (compilation failed)")
+            self.console.print()
+            self.console.print(Panel("[dim][3/4] Skipping proof attempt (compilation failed)[/dim]", border_style="dim"))
         
         # Step 4: Finalize results
         results["total_time"] = time.time() - start_time
-        print(f"\n[4/4] Complete! Total time: {results['total_time']:.2f}s")
+        self.console.print()
+        self.console.print(Panel(
+            f"[bold green][4/4] Complete![/bold green]\n"
+            f"Total time: [cyan]{results['total_time']:.2f}s[/cyan]\n"
+            f"Compilation: {'[green]✓ Success[/green]' if results['compilation_success'] else '[red]✗ Failed[/red]'}\n"
+            f"Proof: {'[green]✓ Success[/green]' if results['proof_success'] else '[red]✗ Failed[/red]'}",
+            border_style="green"
+        ))
         
         return results
     
@@ -139,9 +212,11 @@ class AutoformalizationPipeline:
         """Process multiple problems"""
         all_results = []
         for i, problem in enumerate(problems, 1):
-            print(f"\n\n{'#'*60}")
-            print(f"# Problem {i}/{len(problems)}")
-            print(f"{'#'*60}")
+            self.console.print()
+            self.console.print(Panel(
+                f"[bold cyan]Problem {i}/{len(problems)}[/bold cyan]",
+                border_style="cyan"
+            ))
             
             result = self.process(
                 natural_language=problem.get("natural_language", problem)

@@ -18,13 +18,14 @@ class ProofTactics:
         self.tactics = config.BASIC_TACTICS
         self.llm_client = llm_client
     
-    def attempt_proof(self, formal_statement: str, proof_examples: str = "") -> Dict:
+    def attempt_proof(self, formal_statement: str, proof_examples: str = "", disable_manual: bool = False) -> Dict:
         """
         Attempt to prove a statement using basic tactics
         
         Args:
             formal_statement: Lean 4 theorem statement with 'sorry'
             proof_examples: Few-shot examples of similar theorems with proofs (for LLM fallback)
+            disable_manual: If True, skip manual tactics and go straight to LLM fallback
             
         Returns:
             Dictionary with proof results
@@ -39,33 +40,41 @@ class ProofTactics:
         # Extract theorem declaration (remove 'sorry')
         theorem_decl = formal_statement.replace(":= by sorry", "").strip()
         
-        # Try each tactic
+        # Try each tactic (unless disabled)
         failed_tactics = []
-        for i, tactic in enumerate(self.tactics):
-            proof_code = f"{theorem_decl} := by {tactic}"
-            
-            # Compile and check (use proof_tactic suffix for filename)
-            compile_result = self.lean.compile(proof_code, iteration=i)
-            
-            attempt_result = {
-                "tactic": tactic,
-                "success": compile_result["success"],
-                "errors": compile_result["errors"]
-            }
-            results["attempts"].append(attempt_result)
-            
-            if compile_result["success"]:
-                results["proved"] = True
-                results["tactic"] = tactic
-                results["proof_code"] = proof_code
-                break
-            else:
-                failed_tactics.append(tactic)
+        if not disable_manual:
+            for i, tactic in enumerate(self.tactics):
+                proof_code = f"{theorem_decl} := by {tactic}"
+                
+                # Compile and check (use proof_tactic suffix for filename)
+                compile_result = self.lean.compile(proof_code, iteration=i)
+                
+                attempt_result = {
+                    "tactic": tactic,
+                    "success": compile_result["success"],
+                    "errors": compile_result["errors"],
+                    "proof_code": proof_code
+                }
+                results["attempts"].append(attempt_result)
+                
+                if compile_result["success"]:
+                    results["proved"] = True
+                    results["tactic"] = tactic
+                    results["proof_code"] = proof_code
+                    break
+                else:
+                    failed_tactics.append(tactic)
+        else:
+            # Manual tactics disabled, mark as attempted but not used
+            results["manual_tactics_disabled"] = True
         
-        # If manual tactics failed and LLM client is available, try LLM-generated proof with refinements
+        # If manual tactics failed (or were disabled) and LLM client is available, try LLM-generated proof with refinements
         if not results["proved"] and self.llm_client is not None:
             results["llm_fallback_attempted"] = True
-            print("    - Manual tactics failed, trying LLM-generated proof...")
+            if disable_manual:
+                print("    - Manual tactics disabled, trying LLM-generated proof...")
+            else:
+                print("    - Manual tactics failed, trying LLM-generated proof...")
             
             previous_proof_attempt = None
             compiler_errors = None
